@@ -10,9 +10,9 @@ app.use(express.json());
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post("/api/itinerary", async (req, res) => {
-    const { destination, startDate, endDate } = req.body;
+    const { destination, numDays, numPeople } = req.body;
 
-    const prompt = `Create a brief travel itinerary for ${destination} from ${startDate} to ${endDate}.
+    const prompt = `Create a brief travel itinerary for a group of ${numPeople} people visiting ${destination} for ${numDays} days.
 Requirements:
 - Maximum 3 activities per day
 - Each activity description should be 3-4 words maximum

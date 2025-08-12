@@ -2,12 +2,12 @@ document.getElementById("travelForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const destination = document.getElementById("destination").value.trim();
-  const startDate = document.getElementById("startDate").value;
-  const endDate = document.getElementById("endDate").value;
+  const numDays = document.getElementById("numDays").value;
+  const numPeople = document.getElementById("numPeople").value;
 
   // Show loading spinner
-  document.getElementById("loading").classList.remove("hidden");
-  document.getElementById("results").classList.add("hidden");
+  document.getElementById("loading").classList.remove("d-none");
+  document.getElementById("results").classList.add("d-none");
 
   try {
     const response = await fetch("http://localhost:3001/api/itinerary", {
@@ -17,8 +17,8 @@ document.getElementById("travelForm").addEventListener("submit", async (e) => {
       },
       body: JSON.stringify({
         destination,
-        startDate,
-        endDate,
+        numDays,
+        numPeople,
       }),
     });
 
@@ -33,7 +33,7 @@ document.getElementById("travelForm").addEventListener("submit", async (e) => {
     const content = data.content;
 
     // Hide loading spinner
-    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("loading").classList.add("d-none");
 
     // Parse and display the itinerary
     const itineraryBody = document.getElementById("itineraryBody");
@@ -69,10 +69,10 @@ document.getElementById("travelForm").addEventListener("submit", async (e) => {
       itineraryBody.innerHTML = `<tr><td colspan="3">No valid itinerary found. Please try again.</td></tr>`;
     }
 
-    document.getElementById("results").classList.remove("hidden");
+    document.getElementById("results").classList.remove("d-none");
   } catch (error) {
     console.error("Error:", error);
-    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("loading").classList.add("d-none");
     alert("An error occurred: " + error.message);
   }
 });
