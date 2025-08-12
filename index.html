@@ -1,11 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Travel Planner — Workshop</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(180deg, #f8fafc, #fff);
+      }
+      .card {
+        box-shadow: 0 6px 18px rgba(20, 20, 40, 0.06);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+    </style>
   </head>
   <body>
-    Hello Codefury 8.0 - 24- hour online hackathon
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-9">
+          <div class="card p-4 mb-4">
+            <h3 class="mb-1">AI Travel Planner</h3>
+            <p class="text-muted mb-3">
+              Enter basic details — AI creates a day-wise itinerary.
+            </p>
+
+            <form id="planForm" class="row g-3">
+              <div class="col-md-6">
+                <label for="destination" class="form-label"
+                  >Ask about a destination</label
+                >
+                <input
+                  id="destination"
+                  class="form-control"
+                  placeholder="e.g., Paris"
+                  required
+                />
+              </div>
+
+              <div class="col-md-3">
+                <label for="days" class="form-label">Trip length (days)</label>
+                <input
+                  id="days"
+                  type="number"
+                  class="form-control"
+                  min="1"
+                  max="14"
+                  value="3"
+                  required
+                />
+              </div>
+
+              <div class="col-md-3">
+                <label for="people" class="form-label">Travellers</label>
+                <select id="people" class="form-select">
+                  <option value="Solo">Solo</option>
+                  <option value="Couple">Couple</option>
+                  <option value="Family">Family</option>
+                  <option value="Friends">Friends</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <label for="interests" class="form-label"
+                  >Interests (comma separated)</label
+                >
+                <input
+                  id="interests"
+                  class="form-control"
+                  placeholder="history, food, shopping, nature"
+                />
+              </div>
+
+              <div class="col-12 d-flex gap-2">
+                <button id="generateBtn" type="submit" class="btn btn-primary">
+                  Generate Itinerary
+                </button>
+                <button
+                  id="regenerateBtn"
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  disabled
+                >
+                  Regenerate
+                </button>
+                <div
+                  id="spinner"
+                  class="spinner-border text-primary align-self-center"
+                  role="status"
+                  style="display: none"
+                >
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="ms-auto text-end">
+                  <small class="text-muted d-block"
+                    >Tip: keep inputs short for faster results.</small
+                  >
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div id="resultCard" class="card p-4" style="display: none">
+            <div class="d-flex align-items-start">
+              <div class="flex-grow-1">
+                <h5 id="resultTitle" class="mb-1">Your Itinerary</h5>
+                <small id="summary" class="text-muted"
+                  >AI-generated — tweak as needed.</small
+                >
+              </div>
+              <div class="ms-3">
+                <button id="copyBtn" class="btn btn-sm btn-outline-success">
+                  Copy
+                </button>
+                <button id="saveBtn" class="btn btn-sm btn-outline-primary">
+                  Download
+                </button>
+              </div>
+            </div>
+
+            <hr />
+
+            <pre id="itinerary" class="mb-0" style="font-size: 0.98rem"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const form = document.getElementById("planForm");
+      const generateBtn = document.getElementById("generateBtn");
+      const regenerateBtn = document.getElementById("regenerateBtn");
+      const spinner = document.getElementById("spinner");
+      const resultCard = document.getElementById("resultCard");
+      const itineraryEl = document.getElementById("itinerary");
+      const copyBtn = document.getElementById("copyBtn");
+      const saveBtn = document.getElementById("saveBtn");
+      const summary = document.getElementById("summary");
+
+      let lastPayload = null;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await generateItinerary();
+      });
+
+      regenerateBtn.addEventListener("click", async () => {
+        if (!lastPayload) return;
+        await generateItinerary(lastPayload, true);
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        const text = itineraryEl.textContent.trim();
+        if (!text) return;
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
+      });
+
+      saveBtn.addEventListener("click", () => {
+        const text = itineraryEl.textContent.trim();
+        if (!text) return;
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${
+          document.getElementById("destination").value || "itinerary"
+        }.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      async function generateItinerary(
+        payloadFromArg = null,
+        isRegenerate = false
+      ) {
+        const dest = document.getElementById("destination").value.trim();
+        const days = document.getElementById("days").value;
+        const people = document.getElementById("people").value;
+        const interests = document.getElementById("interests").value.trim();
+
+        if (!dest || !days) {
+          alert("Please enter destination and number of days.");
+          return;
+        }
+
+        const payload = payloadFromArg || {
+          destination: dest,
+          days: days,
+          people: people,
+          interests: interests,
+        };
+
+        lastPayload = payload;
+        generateBtn.disabled = true;
+        regenerateBtn.disabled = true;
+        spinner.style.display = "inline-block";
+        resultCard.style.display = "none";
+        itineraryEl.textContent = "";
+
+        try {
+          // Call local proxy endpoint.
+          const resp = await fetch("/api/itinerary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ payload, regenerate: isRegenerate }),
+          });
+
+          if (!resp.ok) {
+            const err = await resp.text();
+            throw new Error(err || "Server error");
+          }
+
+          const data = await resp.json();
+          const itineraryText =
+            data.itinerary || data.text || "No itinerary returned.";
+          itineraryEl.textContent = itineraryText;
+          summary.textContent = `Plan for ${payload.days} day(s) · ${
+            payload.people
+          } · ${payload.interests || "General"}`;
+          resultCard.style.display = "block";
+          regenerateBtn.disabled = false;
+        } catch (err) {
+          alert("Error: " + (err.message || err));
+          console.error(err);
+        } finally {
+          spinner.style.display = "none";
+          generateBtn.disabled = false;
+        }
+      }
+    </script>
   </body>
 </html>
