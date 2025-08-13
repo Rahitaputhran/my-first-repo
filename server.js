@@ -1,14 +1,22 @@
-import express from "express";
-import cors from "cors";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import 'dotenv/config';
+//Setup your project
+//npm init -y
+//npm install express cors dotenv @google/generative-ai
 
+//Import required packages
+import express from "express"; //create web servers
+import cors from "cors"; //allow requests from other domains
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import 'dotenv/config'; //Load environment variables
+
+//Initialize app and middleware
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+//Setup Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+//Create POST API route
 app.post("/api/itinerary", async (req, res) => {
     const { destination, numDays, numPeople } = req.body;
 
@@ -35,7 +43,10 @@ Day 2 | 10 AM | Beach Swimming`;
     }
 });
 
+//Start the server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+//node server.js
