@@ -14,7 +14,7 @@ document.getElementById("travelForm").addEventListener("submit", async (e) => {
   try {
 
     //Send request to backend
-    const response = await fetch("/api/server/", {
+    const response = await fetch("/api/itinerary/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
